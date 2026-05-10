@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: cashi-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cashidb
+    ports:
+      - "5432:5432"
+    volumes:
+      - cashi-db-data:/var/lib/postgresql/data
+
+volumes:
+  cashi-db-data:
