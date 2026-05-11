@@ -1,0 +1,25 @@
+meta {
+  name: Create Transaction
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/transactions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "amount": 50000,
+    "type": "income",
+    "description": "Sueldo",
+    "date": "2026-05-10T00:00:00.000Z",
+    "categoryId": 1
+  }
+}

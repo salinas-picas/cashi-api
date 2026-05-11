@@ -1,0 +1,21 @@
+meta {
+  name: Update Transaction
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/transactions/1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "amount": 60000
+  }
+}
