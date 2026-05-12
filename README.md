@@ -76,6 +76,10 @@ npm start
 npm run prisma:studio
 ```
 
+## Demo en video
+
+[Ver demo en Loom](https://www.loom.com/share/0286a1956a2b4480b9127beff6909388)
+
 ## Arquitectura
 
 ```
