@@ -1,0 +1,19 @@
+meta {
+  name: Upload Receipt
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/transactions/upload
+  body: multipart-form
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  receipt: @file()
+}

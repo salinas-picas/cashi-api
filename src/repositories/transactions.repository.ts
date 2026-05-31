@@ -1,15 +1,20 @@
 import { prisma } from '../lib/prisma'
 import type { CreateTransactionInput, UpdateTransactionInput } from '../schemas/transactions.schema'
-import type { Transaction, Category, User } from '../generated/prisma/index'
+import type { Transaction, Category } from '../generated/prisma/index'
 
 export type TransactionWithRelations = Transaction & {
   category: Category
-  user: User
+  user: { id: number; email: string }
 }
 
 const transactionInclude = {
   category: true,
-  user: true,
+  user: {
+    select: {
+      id: true,
+      email: true,
+    },
+  },
 } as const
 
 interface TransactionRepository {

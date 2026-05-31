@@ -1,11 +1,9 @@
 import type { Context } from 'hono'
-import { sign } from 'hono/jwt'
+import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { authRepository } from '../repositories/auth.repository'
 import { registerSchema, loginSchema } from '../schemas/auth.schema'
 import { parsePrismaError } from '../lib/prisma-error'
-
-const JWT_SECRET = process.env.JWT_SECRET!
 
 // POST /auth/register
 export const register = async (c: Context) => {
@@ -15,7 +13,7 @@ export const register = async (c: Context) => {
   try {
     const passwordHash = await bcrypt.hash(result.data.password, 10)
     const user = await authRepository.create({ email: result.data.email, passwordHash })
-    const token = await sign({ userId: user.id, email: user.email }, JWT_SECRET, 'HS256')
+    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET!)
     return c.json({ token }, 201)
   } catch (error) {
     const { status, message } = parsePrismaError(error)
@@ -32,7 +30,7 @@ export const login = async (c: Context) => {
   if (!user) return c.json({ error: 'Credenciales inválidas' }, 401)
   const validPassword = await bcrypt.compare(result.data.password, user.passwordHash)
   if (!validPassword) return c.json({ error: 'Credenciales inválidas' }, 401)
-  const token = await sign({ userId: user.id, email: user.email }, JWT_SECRET, 'HS256')
+  const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET!)
   return c.json({ token })
 }
 
