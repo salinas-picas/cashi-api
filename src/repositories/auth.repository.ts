@@ -1,10 +1,14 @@
 import { prisma } from '../lib/prisma'
-import type { RegisterInput } from '../schemas/auth.schema'
 import type { User } from '../generated/prisma/index'
 
+interface CreateUserData {
+  email: string
+  passwordHash: string
+}
+
 interface AuthRepository {
-  findByEmail: (email: string)        => Promise<User | null>
-  create:      (data: RegisterInput)  => Promise<User>
+  findByEmail: (email: string)       => Promise<User | null>
+  create:      (data: CreateUserData) => Promise<User>
 }
 
 export const authRepository: AuthRepository = {

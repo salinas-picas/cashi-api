@@ -1,32 +1,34 @@
 import { prisma } from '../lib/prisma'
 import type { CreateTransactionInput, UpdateTransactionInput } from '../schemas/transactions.schema'
-import type { Transaction, Category } from '../generated/prisma/index'
+import type { Transaction, Category, User } from '../generated/prisma/index'
 
 export type TransactionWithRelations = Transaction & {
   category: Category
+  user: User
 }
 
 const transactionInclude = {
   category: true,
+  user: true,
 } as const
 
 interface TransactionRepository {
-  findAll:    ()                                         => Promise<TransactionWithRelations[]>
-  findById:   (id: number)                               => Promise<TransactionWithRelations | null>
-  create:     (data: CreateTransactionInput)             => Promise<TransactionWithRelations>
-  update:     (id: number, data: UpdateTransactionInput) => Promise<TransactionWithRelations>
-  remove:     (id: number)                               => Promise<void>
-  getBalance: ()                                         => Promise<{ totalIncome: number; totalExpense: number; balance: number }>
+  findAll:    (userId: number)                                        => Promise<TransactionWithRelations[]>
+  findById:   (id: number)                                            => Promise<TransactionWithRelations | null>
+  create:     (data: CreateTransactionInput, userId: number)          => Promise<TransactionWithRelations>
+  update:     (id: number, data: UpdateTransactionInput)              => Promise<TransactionWithRelations>
+  remove:     (id: number)                                            => Promise<void>
+  getBalance: (userId: number)                                        => Promise<{ totalIncome: number; totalExpense: number; balance: number }>
 }
 
 export const transactionsRepository: TransactionRepository = {
-  findAll: () =>
-    prisma.transaction.findMany({ include: transactionInclude }),
+  findAll: (userId) =>
+    prisma.transaction.findMany({ where: { userId }, include: transactionInclude }),
 
   findById: (id) =>
     prisma.transaction.findUnique({ where: { id }, include: transactionInclude }),
 
-  create: (data) =>
+  create: (data, userId) =>
     prisma.transaction.create({
       data: {
         amount: data.amount,
@@ -34,6 +36,10 @@ export const transactionsRepository: TransactionRepository = {
         description: data.description ?? '',
         date: new Date(data.date),
         categoryId: data.categoryId,
+        receiptUrl: data.receiptUrl,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        userId,
       },
       include: transactionInclude,
     }),
@@ -54,8 +60,8 @@ export const transactionsRepository: TransactionRepository = {
   remove: (id) =>
     prisma.transaction.delete({ where: { id } }).then(() => undefined),
 
-  getBalance: async () => {
-    const transactions = await prisma.transaction.findMany()
+  getBalance: async (userId) => {
+    const transactions = await prisma.transaction.findMany({ where: { userId } })
     const totalIncome = transactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0)

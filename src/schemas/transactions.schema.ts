@@ -6,6 +6,9 @@ export const createTransactionSchema = z.object({
   description: z.string().optional(),
   date: z.string().datetime(),
   categoryId: z.number().int().positive(),
+  receiptUrl: z.string().url().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 })
 
 export const updateTransactionSchema = z.object({

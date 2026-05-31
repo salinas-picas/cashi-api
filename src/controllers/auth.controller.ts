@@ -5,7 +5,7 @@ import { authRepository } from '../repositories/auth.repository'
 import { registerSchema, loginSchema } from '../schemas/auth.schema'
 import { parsePrismaError } from '../lib/prisma-error'
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'secret'
+const JWT_SECRET = process.env.JWT_SECRET!
 
 // POST /auth/register
 export const register = async (c: Context) => {
@@ -13,13 +13,10 @@ export const register = async (c: Context) => {
   const result = registerSchema.safeParse(body)
   if (!result.success) return c.json({ errors: result.error.issues }, 400)
   try {
-    const hashedPassword = await bcrypt.hash(result.data.password, 10)
-    const user = await authRepository.create({
-      email: result.data.email,
-      password: hashedPassword,
-    })
-    const { password: _, ...userWithoutPassword } = user
-    return c.json(userWithoutPassword, 201)
+    const passwordHash = await bcrypt.hash(result.data.password, 10)
+    const user = await authRepository.create({ email: result.data.email, passwordHash })
+    const token = await sign({ userId: user.id, email: user.email }, JWT_SECRET, 'HS256')
+    return c.json({ token }, 201)
   } catch (error) {
     const { status, message } = parsePrismaError(error)
     return c.json({ error: message }, status)
@@ -33,7 +30,7 @@ export const login = async (c: Context) => {
   if (!result.success) return c.json({ errors: result.error.issues }, 400)
   const user = await authRepository.findByEmail(result.data.email)
   if (!user) return c.json({ error: 'Credenciales inválidas' }, 401)
-  const validPassword = await bcrypt.compare(result.data.password, user.password)
+  const validPassword = await bcrypt.compare(result.data.password, user.passwordHash)
   if (!validPassword) return c.json({ error: 'Credenciales inválidas' }, 401)
   const token = await sign({ userId: user.id, email: user.email }, JWT_SECRET, 'HS256')
   return c.json({ token })

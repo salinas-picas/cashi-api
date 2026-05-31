@@ -1,28 +1,36 @@
 import 'dotenv/config'
 import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
-import { jwt } from 'hono/jwt'
-import authRouter         from './routes/auth.routes'
-import categoriesRouter   from './routes/categories.routes'
-import transactionsRouter from './routes/transactions.routes'
+import { authMiddleware }     from './middleware/auth'
+import authRouter             from './routes/auth.routes'
+import categoriesRouter       from './routes/categories.routes'
+import transactionsRouter     from './routes/transactions.routes'
+import uploadRouter           from './routes/upload.routes'
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'secret'
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET no está definida en las variables de entorno')
+}
 
 const app = new Hono()
 
 // Health check
-app.get('/', (c) => c.json({ status: 'ok', message: 'Cashi API — Unidad 2' }))
+app.get('/', (c) => c.json({ status: 'ok', message: 'Cashi API — Unidad 3' }))
 
 // Rutas públicas
 app.route('/auth', authRouter)
 
 // Middleware JWT para rutas protegidas
-app.use('/categories/*', jwt({ secret: JWT_SECRET, alg: 'HS256' }))
-app.use('/transactions/*', jwt({ secret: JWT_SECRET, alg: 'HS256' }))
+app.use('/categories/*', authMiddleware)
+app.use('/transactions/*', authMiddleware)
+
+// Archivos estáticos
+app.use('/uploads/*', serveStatic({ root: './' }))
 
 // Rutas protegidas
 app.route('/categories',   categoriesRouter)
 app.route('/transactions', transactionsRouter)
+app.route('/transactions', uploadRouter)
 
 const PORT = Number(process.env.PORT) || 3000
 serve({ fetch: app.fetch, port: PORT }, () => {
