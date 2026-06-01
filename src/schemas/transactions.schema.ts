@@ -6,7 +6,7 @@ export const createTransactionSchema = z.object({
   description: z.string().optional(),
   date: z.string().datetime(),
   categoryId: z.number().int().positive(),
-  receiptUrl: z.string().url().optional(),
+  receiptUrl: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
 })
@@ -17,6 +17,9 @@ export const updateTransactionSchema = z.object({
   description: z.string().optional(),
   date: z.string().datetime().optional(),
   categoryId: z.number().int().positive().optional(),
+  receiptUrl: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 })
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>
