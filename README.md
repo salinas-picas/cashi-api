@@ -2,6 +2,18 @@
 
 REST API para gestión de finanzas personales. Los usuarios se registran con email y contraseña, autentican mediante JWT y operan exclusivamente sobre sus propias transacciones. Cada transacción puede tener coordenadas GPS y un comprobante de imagen subido al servidor.
 
+## Producción
+
+**URL base:** `https://cashi-api-hp21.onrender.com`
+
+| Componente | Servicio |
+|---|---|
+| API | [Render](https://render.com) (Web Service, Node.js) |
+| Base de datos | Render PostgreSQL (managed) |
+| Almacenamiento de imágenes | Cloudflare R2 |
+
+El deploy es automático: cada push a la rama `master` dispara un nuevo despliegue en Render.
+
 ## Stack tecnológico
 
 | Capa | Tecnología |
@@ -29,6 +41,13 @@ JWT_SECRET="tu_secreto_seguro_aqui"
 
 # Puerto en el que escucha el servidor (opcional, default 3000)
 PORT=3000
+
+# Cloudflare R2 — almacenamiento de comprobantes
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET_NAME=
+R2_PUBLIC_URL=
 ```
 
 > El servidor lanza un error al iniciar si `JWT_SECRET` no está definida.
@@ -123,7 +142,7 @@ src/
 prisma/
 ├── schema.prisma  # Modelos: User, Category, Transaction
 └── migrations/    # Historial de migraciones SQL
-uploads/           # Imágenes de comprobantes (local)
+uploads/           # Carpeta vacía conservada por .gitkeep (ya no se usa)
 ```
 
 ### Decisiones de diseño
@@ -136,9 +155,7 @@ El repository es responsable exclusivamente de acceso a datos: recibe parámetro
 
 ### Almacenamiento de imágenes
 
-En esta implementación las imágenes se guardan localmente en `uploads/` con un nombre UUID para evitar colisiones. La carpeta se sirve como archivos estáticos en `/uploads/*`.
-
-En un entorno de producción se reemplazaría el `writeFile` por una llamada a un object storage (Cloudflare R2, AWS S3 o similar) y la URL devuelta apuntaría al CDN correspondiente, sin cambios en el contrato de la API (`{ receiptUrl: "..." }`).
+Los comprobantes se suben directamente a **Cloudflare R2** usando el SDK de S3 (`@aws-sdk/client-s3`). Cada archivo recibe un nombre UUID para evitar colisiones y se almacena en el bucket configurado en `R2_BUCKET_NAME`. El endpoint devuelve la URL pública del CDN de R2 (`R2_PUBLIC_URL/{filename}`), sin intermediarios ni archivos locales.
 
 ## Uso de IA
 
