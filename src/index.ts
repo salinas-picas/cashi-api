@@ -1,6 +1,5 @@
 import 'dotenv/config'
 import { serve } from '@hono/node-server'
-import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { authMiddleware }     from './middleware/auth'
 import authRouter             from './routes/auth.routes'
@@ -23,9 +22,6 @@ app.route('/auth', authRouter)
 // Middleware JWT para rutas protegidas
 app.use('/categories/*', authMiddleware)
 app.use('/transactions/*', authMiddleware)
-
-// Archivos estáticos
-app.use('/uploads/*', serveStatic({ root: './' }))
 
 // Rutas protegidas
 app.route('/categories',   categoriesRouter)

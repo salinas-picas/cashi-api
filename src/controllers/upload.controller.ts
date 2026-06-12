@@ -1,7 +1,6 @@
 import type { Context } from 'hono'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
 import { randomUUID } from 'crypto'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const MAX_SIZE = 5 * 1024 * 1024
@@ -11,6 +10,15 @@ const MIME_TO_EXT: Record<string, string> = {
   'image/png':  '.png',
   'image/webp': '.webp',
 }
+
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+})
 
 // POST /transactions/upload
 export const uploadReceipt = async (c: Context) => {
@@ -30,9 +38,14 @@ export const uploadReceipt = async (c: Context) => {
   }
 
   const filename = `${randomUUID()}${MIME_TO_EXT[file.type]}`
-  const filepath = join(process.cwd(), 'uploads', filename)
+  const buffer = Buffer.from(await file.arrayBuffer())
 
-  await writeFile(filepath, Buffer.from(await file.arrayBuffer()))
+  await s3.send(new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: filename,
+    Body: buffer,
+    ContentType: file.type,
+  }))
 
-  return c.json({ receiptUrl: `/uploads/${filename}` }, 201)
+  return c.json({ receiptUrl: `${process.env.R2_PUBLIC_URL}/${filename}` }, 201)
 }
